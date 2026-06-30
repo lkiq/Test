@@ -67,6 +67,12 @@ public class CareerExplorationServiceImpl implements CareerExplorationService {
 
             String question = req.getPreferences() != null ? req.getPreferences() : "";
             boolean isGeneralQuestion = isLikelyGeneralQuestion(question);
+            boolean fromAssessment = "ASSESSMENT".equals(req.getSource());
+
+            // 新增：信息不足时先主动追问，帮助用户明确职业方向
+            if (!isGeneralQuestion && isInformationInsufficient(profile, latestResult, req, fromAssessment)) {
+                return askForClarification(userId, req, profile, latestResult);
+            }
 
             // API 不可用时直接兜底
             if (!deepSeekService.isAvailable()) {
@@ -124,12 +130,22 @@ public class CareerExplorationServiceImpl implements CareerExplorationService {
                                                            CareerProfile profile, AssessmentResult latestResult,
                                                            List<JobPosition> positions, boolean isGeneralQuestion) {
         try {
+            boolean fromAssessment = "ASSESSMENT".equals(req.getSource());
+
             // 解析用户当前表达的兴趣和城市
-            InterestCity resolved = extractInterestCity(req.getPreferences(), profile);
+            InterestCity resolved = extractInterestCity(req.getPreferences(), profile, fromAssessment);
+
+            // 测评场景且未提取到兴趣时，用测评优势维度作为临时兴趣方向
+            String effectiveInterest = resolved.interest;
+            if ((effectiveInterest == null || effectiveInterest.isBlank()) && fromAssessment && latestResult != null) {
+                String advantageDim = extractAssessmentAdvantageDimension(latestResult);
+                effectiveInterest = mapDimensionToInterest(advantageDim);
+                log.info("测评场景未提取到兴趣，使用测评优势维度: dimension={}, interest={}", advantageDim, effectiveInterest);
+            }
 
             // 构建真实匹配度：基于画像 + 当前兴趣/城市 + 测评结果
             Map<String, JobMatchResponse> realScoreMap = buildRealScoreMap(
-                    userId, resolved.interest, resolved.city, latestResult);
+                    userId, effectiveInterest, resolved.city, latestResult);
 
             // 仅取 Top10 岗位进入 prompt，避免过长导致 AI 超时
             List<JobPosition> topPositions = selectTopPositionsForPrompt(realScoreMap, positions);
@@ -146,9 +162,9 @@ public class CareerExplorationServiceImpl implements CareerExplorationService {
                 aiResp.setSource("AI");
                 aiResp.setCreatedAt(LocalDateTime.now());
 
-                // 用真实匹配度覆盖 AI 分数并过滤未命中岗位
+                // 用真实匹配度覆盖 AI 生成的 matchScore 并过滤未命中岗位
                 CareerDirectionResponse processedResp = postProcessRecommendations(
-                        aiResp, realScoreMap, resolved.interest, latestResult);
+                        aiResp, realScoreMap, effectiveInterest, latestResult);
                 saveRecord(userId, "CAREER_EXPLORATION", req.getPreferences(),
                         Map.of("directions", processedResp.getDirections(),
                                 "primaryDirections", processedResp.getPrimaryDirections(),
@@ -217,32 +233,6 @@ public class CareerExplorationServiceImpl implements CareerExplorationService {
             log.warn("通用咨询 AI 调用失败，降级到职业推荐: {}", e.getMessage());
         }
         return null;
-    }
-
-    /**
-     * 轻量意图识别：调用 DeepSeek 判断用户问题属于 RECOMMENDATION 还是 GENERAL
-     * 分类失败时默认返回 RECOMMENDATION，兼容存量行为
-     */
-    private String classifyIntent(String question) {
-        try {
-            String q = question != null ? question : "";
-            Map<String, String> params = new HashMap<>();
-            params.put("question", q);
-            String prompt = promptUtil.loadAndRender("career_intent_classifier", params);
-
-            // 轻量调用：快速分类，max_tokens 128 防止中文输出被截断
-            String response = deepSeekService.callAPI("你是一位意图分类专家", prompt, 3000L, 128);
-            Map<String, Object> result = deepSeekService.parseJSONResponse(response);
-            log.info("意图识别结果: question={}, result={}", q, result);
-            if (result != null && result.get("intent") instanceof String intent) {
-                if (INTENT_GENERAL.equalsIgnoreCase(intent)) {
-                    return INTENT_GENERAL;
-                }
-            }
-        } catch (Exception e) {
-            log.warn("意图识别失败，默认按职业推荐处理: {}", e.getMessage());
-        }
-        return INTENT_RECOMMENDATION;
     }
 
     /**
@@ -350,9 +340,10 @@ public class CareerExplorationServiceImpl implements CareerExplorationService {
 
     /**
      * 判断岗位是否与用户兴趣方向强相关
+     * 兴趣为空时返回 false，避免所有岗位都进入 primary 队列
      */
     private boolean isInterestMatched(JobPosition job, String interest) {
-        if (interest == null || interest.isBlank()) return true;
+        if (interest == null || interest.isBlank()) return false;
         String i = interest.toLowerCase();
         String title = (job.getTitle() != null ? job.getTitle() : "").toLowerCase();
         String direction = (job.getDirection() != null ? job.getDirection() : "").toLowerCase();
@@ -381,6 +372,8 @@ public class CareerExplorationServiceImpl implements CareerExplorationService {
                     .map(this::mapMatchToDirectionItem)
                     .collect(Collectors.toList());
             aiResp.setDirections(fallbackItems);
+            aiResp.setNeedClarification(false);
+            aiResp.setMissingDimensions(new ArrayList<>());
             return buildDualQueueDirections(aiResp, realScoreMap, interest);
         }
 
@@ -407,6 +400,9 @@ public class CareerExplorationServiceImpl implements CareerExplorationService {
         }
 
         aiResp.setDirections(validItems);
+        // 服务层已判断信息充足并进入推荐分支，强制关闭 AI 可能误返回的追问标记
+        aiResp.setNeedClarification(false);
+        aiResp.setMissingDimensions(new ArrayList<>());
         return buildDualQueueDirections(aiResp, realScoreMap, interest);
     }
 
@@ -518,9 +514,25 @@ public class CareerExplorationServiceImpl implements CareerExplorationService {
         }
 
         try {
-            InterestCity resolved = extractInterestCity(req.getPreferences(), profile);
+            boolean fromAssessment = "ASSESSMENT".equals(req.getSource());
+            InterestCity resolved = extractInterestCity(req.getPreferences(), profile, fromAssessment);
+
+            // 测评场景且未提取到兴趣时，用测评优势维度作为临时兴趣方向
+            String effectiveInterest = resolved.interest;
+            if ((effectiveInterest == null || effectiveInterest.isBlank()) && fromAssessment && result != null) {
+                String advantageDim = extractAssessmentAdvantageDimension(result);
+                effectiveInterest = mapDimensionToInterest(advantageDim);
+                log.info("兜底推荐-测评场景使用优势维度: dimension={}, interest={}", advantageDim, effectiveInterest);
+            }
+
             Map<String, JobMatchResponse> realScoreMap = buildRealScoreMap(
-                    userId, resolved.interest, resolved.city, result);
+                    userId, effectiveInterest, resolved.city, result);
+
+            if (realScoreMap == null || realScoreMap.isEmpty()) {
+                log.warn("兜底推荐无有效匹配度，触发追问: userId={}, fromAssessment={}", userId, fromAssessment);
+                return askForClarification(userId, req, profile, result);
+            }
+
             List<CareerDirectionResponse.DirectionItem> items = realScoreMap.values().stream()
                     .limit(MAX_FALLBACK_DIRECTIONS)
                     .map(this::mapMatchToDirectionItem)
@@ -532,7 +544,7 @@ public class CareerExplorationServiceImpl implements CareerExplorationService {
                     .source("FALLBACK")
                     .createdAt(LocalDateTime.now())
                     .build();
-            CareerDirectionResponse dualResp = buildDualQueueDirections(resp, realScoreMap, resolved.interest);
+            CareerDirectionResponse dualResp = buildDualQueueDirections(resp, realScoreMap, effectiveInterest);
             saveRecord(userId, "CAREER_EXPLORATION", req.getPreferences(),
                     Map.of("directions", dualResp.getDirections(),
                             "primaryDirections", dualResp.getPrimaryDirections(),
@@ -591,8 +603,11 @@ public class CareerExplorationServiceImpl implements CareerExplorationService {
     /**
      * 从用户输入和画像中提取兴趣方向与期望城市
      * 输入优先：命中常见城市名或技术方向关键词时直接使用；否则回退到画像
+     *
+     * @param preferAssessment 为 true 时（来自测评页入口），禁止回退到 profile.targetRoles，
+     *                         避免测评推荐被历史画像覆盖
      */
-    private InterestCity extractInterestCity(String preferences, CareerProfile profile) {
+    private InterestCity extractInterestCity(String preferences, CareerProfile profile, boolean preferAssessment) {
         String interest = null;
         String city = null;
         if (preferences != null && !preferences.isBlank()) {
@@ -612,7 +627,15 @@ public class CareerExplorationServiceImpl implements CareerExplorationService {
                 city = cm.group(1);
             }
         }
-        // 画像兜底
+        // 测评页入口：只回退城市，不回退兴趣方向，确保推荐基于测评结果
+        if (preferAssessment) {
+            if ((city == null || city.isBlank()) && profile != null) {
+                city = profile.getExpectedCity();
+            }
+            return new InterestCity(interest, city);
+        }
+
+        // 普通探索入口：画像兜底
         if ((interest == null || interest.isBlank()) && profile != null) {
             interest = parseFirstTargetRole(profile.getTargetRoles());
         }
@@ -706,6 +729,160 @@ public class CareerExplorationServiceImpl implements CareerExplorationService {
             sb.append(label).append("：").append(content).append("\n");
         }
         return sb.toString();
+    }
+
+    /**
+     * 从测评结果中提取相对优势维度（得分最高维度）
+     */
+    private String extractAssessmentAdvantageDimension(AssessmentResult result) {
+        if (result == null) return null;
+        Map<String, Double> scores = new LinkedHashMap<>();
+        scores.put("编程", result.getProgrammingScore());
+        scores.put("逻辑", result.getLogicScore());
+        scores.put("产品", result.getProductScore());
+        scores.put("技术", result.getTechScore());
+        scores.put("沟通", result.getCommunicationScore());
+
+        return scores.entrySet().stream()
+                .filter(e -> e.getValue() != null)
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(null);
+    }
+
+    /**
+     * 将测评优势维度映射为兴趣关键词，用于岗位匹配
+     */
+    private String mapDimensionToInterest(String dimension) {
+        if (dimension == null) return null;
+        return switch (dimension) {
+            case "编程" -> "后端";
+            case "逻辑" -> "算法";
+            case "产品" -> "产品";
+            case "技术" -> "运维";
+            case "沟通" -> "产品";
+            default -> dimension;
+        };
+    }
+
+    /**
+     * 判断用户信息是否不足以进行职业推荐
+     * 规则触发：比 AI 意图识别更稳定，避免信息不足时给出固定推荐
+     *
+     * @param fromAssessment 是否来自测评页入口；若为 true 且有测评结果，视为信息充足
+     */
+    private boolean isInformationInsufficient(CareerProfile profile, AssessmentResult latestResult,
+                                              CareerExplorationRequest req, boolean fromAssessment) {
+        // 测评页入口：有测评结果即视为信息充足，由测评优势维度驱动推荐
+        if (fromAssessment && latestResult != null) {
+            return false;
+        }
+
+        // 用户已明确表达兴趣，信息充足
+        InterestCity resolved = extractInterestCity(req.getPreferences(), profile, false);
+        if (resolved.interest != null && !resolved.interest.isBlank()) {
+            return false;
+        }
+
+        // 画像关键维度缺失
+        boolean profileIncomplete = profile == null
+                || isBlank(profile.getTargetRoles())
+                || isBlank(profile.getExpectedCity())
+                || isBlank(profile.getSkillTags());
+        boolean noAssessment = latestResult == null;
+        boolean noPreferences = isBlank(req.getPreferences());
+
+        return profileIncomplete && noAssessment && noPreferences;
+    }
+
+    /**
+     * 生成 AI 追问文案，引导用户补充职业方向信息
+     */
+    private CareerDirectionResponse askForClarification(Long userId, CareerExplorationRequest req,
+                                                        CareerProfile profile, AssessmentResult latestResult) {
+        try {
+            String template = promptUtil.loadTemplate("career_clarification");
+            Map<String, String> params = buildCareerParams(req, profile, latestResult, Collections.emptyList());
+            String prompt = promptUtil.renderTemplate(template, params);
+
+            String response = deepSeekService.callAPI("你是一位资深的职业规划导师", prompt, 8000L, 512, 0.7);
+            String clarifyText = response;
+            Map<String, Object> result = deepSeekService.parseJSONResponse(response);
+            if (result != null && result.get("overallAnalysis") instanceof String text && !text.isBlank()) {
+                clarifyText = text;
+            } else if (result != null && result.get("answer") instanceof String text && !text.isBlank()) {
+                clarifyText = text;
+            }
+
+            List<String> missingDimensions = new ArrayList<>();
+            if (profile == null || isBlank(profile.getTargetRoles())) missingDimensions.add("interest");
+            if (profile == null || isBlank(profile.getExpectedCity())) missingDimensions.add("city");
+            if (latestResult == null) missingDimensions.add("assessment");
+            if (isBlank(req.getPreferences())) missingDimensions.add("preference");
+
+            CareerDirectionResponse resp = CareerDirectionResponse.builder()
+                    .overallAnalysis(clarifyText)
+                    .needClarification(true)
+                    .missingDimensions(missingDimensions)
+                    .directions(new ArrayList<>())
+                    .primaryDirections(new ArrayList<>())
+                    .fallbackDirections(new ArrayList<>())
+                    .source("AI")
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            saveRecord(userId, "CAREER_EXPLORATION", req.getPreferences(),
+                    Map.of("needClarification", true,
+                            "overallAnalysis", clarifyText,
+                            "missingDimensions", missingDimensions), "AI");
+            return resp;
+        } catch (Exception e) {
+            log.warn("生成 AI 追问文案失败，使用默认追问: {}", e.getMessage());
+            return defaultClarificationResponse(userId, req, profile, latestResult);
+        }
+    }
+
+    /**
+     * 默认追问文案兜底
+     */
+    private CareerDirectionResponse defaultClarificationResponse(Long userId, CareerExplorationRequest req,
+                                                                  CareerProfile profile, AssessmentResult latestResult) {
+        StringBuilder sb = new StringBuilder("为了给你推荐更合适的职业方向，我还需要了解：\n");
+        List<String> missingDimensions = new ArrayList<>();
+        if (profile == null || isBlank(profile.getTargetRoles())) {
+            sb.append("1. 你对哪些岗位或技术方向感兴趣？（如后端开发、AI、产品设计等）\n");
+            missingDimensions.add("interest");
+        }
+        if (profile == null || isBlank(profile.getExpectedCity())) {
+            sb.append("2. 你期望工作的城市是哪里？\n");
+            missingDimensions.add("city");
+        }
+        if (latestResult == null) {
+            sb.append("3. 可以先完成一次能力测评，我会结合测评结果给你更精准的建议。\n");
+            missingDimensions.add("assessment");
+        }
+
+        CareerDirectionResponse resp = CareerDirectionResponse.builder()
+                .overallAnalysis(sb.toString())
+                .needClarification(true)
+                .missingDimensions(missingDimensions)
+                .directions(new ArrayList<>())
+                .primaryDirections(new ArrayList<>())
+                .fallbackDirections(new ArrayList<>())
+                .source("FALLBACK")
+                .createdAt(LocalDateTime.now())
+                .build();
+        saveRecord(userId, "CAREER_EXPLORATION", req.getPreferences(),
+                Map.of("needClarification", true,
+                        "overallAnalysis", sb.toString(),
+                        "missingDimensions", missingDimensions), "FALLBACK");
+        return resp;
+    }
+
+    /**
+     * 判断字符串是否为空或空白
+     */
+    private boolean isBlank(String str) {
+        return str == null || str.isBlank();
     }
 
     /**

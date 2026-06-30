@@ -22,6 +22,8 @@ public class ResumeOptimizeResponse {
     private List<IssueItem> issues;
     private List<String> optimizedSnippets;
     private String summary;
+    /** AI 生成的完整优化简历全文 */
+    private String optimizedResume;
     private String source;
     private LocalDateTime createdAt;
 

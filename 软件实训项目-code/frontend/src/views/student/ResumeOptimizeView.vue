@@ -133,7 +133,7 @@
                 class="score-dim"
               >
                 <div class="sd-header">
-                  <span class="sd-name">{{ k }}</span>
+                  <span class="sd-name">{{ dimensionNameMap[k] || k }}</span>
                   <span class="sd-value" :style="{ color: dimColor(v) }">{{ v }}分</span>
                 </div>
                 <div class="sd-bar-wrap">
@@ -183,6 +183,19 @@
             <h4 class="rp-section-title"><span>📝</span> 综合总结</h4>
             <p>{{ result.summary }}</p>
           </div>
+
+          <!-- AI 优化版本 -->
+          <div class="rp-optimized" v-if="result.optimizedResume">
+            <h4 class="rp-section-title">
+              <span>✨</span> AI 优化版本
+              <el-button link type="primary" size="small" @click="copyOptimized">
+                {{ copied ? '已复制' : '复制全文' }}
+              </el-button>
+            </h4>
+            <div class="optimized-content">
+              <pre>{{ result.optimizedResume }}</pre>
+            </div>
+          </div>
         </div>
 
         <!-- 空状态 -->
@@ -216,6 +229,7 @@ const fileUrl = ref('')
 const loading = ref(false)
 const result = ref<any>(null)
 const resumeList = ref<any[]>([])
+const copied = ref(false)
 
 const scoreColor = computed(() => {
   const s = result.value?.score || 0
@@ -224,6 +238,14 @@ const scoreColor = computed(() => {
   if (s >= 55) return '#f59e0b'
   return '#ef4444'
 })
+
+/** 维度分数中文映射 */
+const dimensionNameMap: Record<string, string> = {
+  completeness: '完整性',
+  matching: '岗位匹配度',
+  quantification: '成果量化',
+  expression: '专业表达'
+}
 
 function dimColor(v: number): string {
   if (v >= 85) return '#10b981'
@@ -308,6 +330,19 @@ async function handleDelete(id: number) {
     }
     fetchList()
   } catch (e) { /* ignore */ }
+}
+
+/** 复制 AI 优化版简历全文到剪贴板 */
+async function copyOptimized() {
+  if (!result.value?.optimizedResume) return
+  try {
+    await navigator.clipboard.writeText(result.value.optimizedResume)
+    copied.value = true
+    ElMessage.success('优化版简历已复制到剪贴板')
+    setTimeout(() => { copied.value = false }, 2000)
+  } catch (e) {
+    ElMessage.error('复制失败，请手动选中复制')
+  }
 }
 
 async function analyze() {
@@ -731,5 +766,30 @@ async function analyze() {
 @keyframes scanLine {
   0%, 100% { top: 0; }
   50% { top: calc(100% - 3px); }
+}
+
+// ======== AI 优化版本 ========
+.rp-optimized {
+  margin-top: 24px;
+  .rp-section-title {
+    .el-button {
+      margin-left: auto;
+    }
+  }
+  .optimized-content {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 18px 20px;
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #374151;
+    }
+  }
 }
 </style>

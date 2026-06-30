@@ -36,10 +36,23 @@
               </div>
             </div>
           </div>
+          <!-- 追问状态提示 -->
+          <div v-if="missingDimensions.length" class="clarify-hint">
+            <span class="clarify-hint-icon">💡</span>
+            <span>为了更精准地推荐，请补充：</span>
+            <span
+              v-for="dim in missingDimensions"
+              :key="dim"
+              class="clarify-dim-tag"
+            >
+              {{ getMissingDimensionText(dim) }}
+            </span>
+          </div>
+
           <ChatWindow
             :messages="messages"
             :loading="loading"
-            placeholder="描述你的职业兴趣和偏好..."
+            :placeholder="missingDimensions.length ? '先补充以上信息，AI 会为你推荐方向...' : '描述你的职业兴趣和偏好...'"
             @send="handleSend"
           />
         </div>
@@ -266,7 +279,20 @@ const results = ref<any[]>([])
 const primaryResults = ref<any[]>([])
 /** 双队列：稳妥备选方向（画像/测评客观适配） */
 const fallbackResults = ref<any[]>([])
+/** 当前缺失的信息维度，用于追问状态提示 */
+const missingDimensions = ref<string[]>([])
 const hasQueried = ref(false)
+
+/** 将 missingDimensions 映射为中文提示 */
+function getMissingDimensionText(dim: string): string {
+  const map: Record<string, string> = {
+    interest: '感兴趣的方向',
+    city: '期望城市',
+    assessment: '能力测评',
+    preference: '职业偏好'
+  }
+  return map[dim] || dim
+}
 
 function getRoleIcon(title: string): string {
   const map: Record<string, string> = {
@@ -300,10 +326,13 @@ function applyRecommendation(data: any, userText?: string) {
     results.value = []
     primaryResults.value = []
     fallbackResults.value = []
+    missingDimensions.value = data.missingDimensions || []
     const clarifyContent = data.overallAnalysis || '为了给你推荐更合适的岗位，请告诉我你感兴趣的方向和期望工作的城市。'
     messages.value.push({ role: 'assistant', content: clarifyContent })
     return
   }
+  // 正常推荐场景：清空缺失维度
+  missingDimensions.value = []
   // 正常推荐场景：优先使用双队列（意向方向 + 稳妥备选），无则降级到单队列
   const primary = data.primaryDirections || []
   const fallback = data.fallbackDirections || []
@@ -451,6 +480,32 @@ onMounted(async () => {
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.clarify-hint {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fef3c7;
+  border-bottom: 1px solid #fde68a;
+  font-size: 13px;
+  color: #92400e;
+}
+
+.clarify-hint-icon {
+  font-size: 14px;
+}
+
+.clarify-dim-tag {
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #fbbf24;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b45309;
 }
 
 .chat-panel-header {

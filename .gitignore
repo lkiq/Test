@@ -118,4 +118,12 @@ nul'
 .git_backup_old/
 BOOT-INF/
 
+# ===== 敏感配置文件（禁止提交） =====
+软件实训项目-code/backend/src/main/resources/application-dev.yml
+
+# ===== 测试文件 =====
+*.pdf
+软件实训项目-code/backend/generate_resume.py
+李明轩 Java后端开发 完整测试简历.pdf
+
 

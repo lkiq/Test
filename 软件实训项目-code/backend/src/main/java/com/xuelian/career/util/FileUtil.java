@@ -27,11 +27,12 @@ public class FileUtil {
     /** 允许的文件 MIME 类型 */
     private static final List<String> ALLOWED_TYPES = Arrays.asList(
             "application/pdf",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "text/plain"
     );
 
     /** 允许的文件扩展名 */
-    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("pdf", "docx");
+    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("pdf", "docx", "txt");
 
     /** 允许的图片 MIME 类型 */
     private static final List<String> ALLOWED_IMAGE_TYPES = Arrays.asList(
@@ -100,7 +101,7 @@ public class FileUtil {
         // 格式校验（MIME 类型）
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_TYPES.contains(contentType.toLowerCase())) {
-            throw new BusinessException("仅支持 PDF 和 DOCX 格式的文件");
+            throw new BusinessException("仅支持 PDF、DOCX 和 TXT 格式的文件");
         }
 
         // 扩展名校验
@@ -110,7 +111,7 @@ public class FileUtil {
         }
         String extension = getFileExtension(originalFilename).toLowerCase();
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
-            throw new BusinessException("仅支持 .pdf 和 .docx 格式的文件");
+            throw new BusinessException("仅支持 .pdf、.docx 和 .txt 格式的文件");
         }
     }
 
@@ -126,6 +127,30 @@ public class FileUtil {
         } catch (IOException e) {
             log.warn("文件删除失败: {}", filePath);
         }
+    }
+
+    /**
+     * 根据相对路径解析本地文件完整路径
+     * @param relativePath 文件相对路径
+     * @return 本地 Path
+     */
+    public Path resolveFilePath(String relativePath) {
+        if (relativePath == null || relativePath.isBlank()) {
+            throw new BusinessException("文件路径不能为空");
+        }
+        return Paths.get(uploadPath, relativePath);
+    }
+
+    /**
+     * 从已上传的简历文件中提取文本内容
+     * @param relativePath 简历文件相对路径
+     * @return 清洗后的简历正文
+     * @throws BusinessException 文件不存在、格式不支持或解析失败时抛出
+     */
+    public String extractResumeText(String relativePath) {
+        Path path = resolveFilePath(relativePath);
+        String ext = getFileExtension(path.getFileName().toString());
+        return ResumeTextExtractor.extractTextFromPath(path, ext);
     }
 
     /**
