@@ -251,12 +251,8 @@ public class DeepSeekServiceImpl implements DeepSeekService {
             callLog.setDurationMs(duration);
             saveCallLog(callLog);
 
-            // 标记 API 可用（Redis 不可用时跳过）
-            try {
-                redisTemplate.opsForValue().set(AI_AVAILABLE_KEY, true, 60, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                log.warn("Redis 不可用，跳过 AI 可用标记写入");
-            }
+            // 标记 API 可用
+            redisTemplate.opsForValue().set(AI_AVAILABLE_KEY, true, 60, TimeUnit.SECONDS);
 
             return content;
 

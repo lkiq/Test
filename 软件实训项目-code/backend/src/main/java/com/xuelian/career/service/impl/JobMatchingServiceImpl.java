@@ -72,11 +72,9 @@ public class JobMatchingServiceImpl implements JobMatchingService {
                             .orderByDesc(AssessmentResult::getCreatedAt).last("LIMIT 1"));
         }
 
-        // 获取所有已发布岗位
+        // 获取所有岗位
         List<JobPosition> jobs = jobPositionMapper.selectList(
-                new LambdaQueryWrapper<JobPosition>()
-                        .eq(JobPosition::getIsDeleted, 0)
-                        .eq(JobPosition::getPublishStatus, 1));
+                new LambdaQueryWrapper<JobPosition>().eq(JobPosition::getIsDeleted, 0));
 
         // 动态权重分支选择（基于生效后的 interest/city 判断）
         boolean infoSufficient = userInterest != null && !userInterest.isBlank()
@@ -99,6 +97,9 @@ public class JobMatchingServiceImpl implements JobMatchingService {
 
     /**
      * 抽离核心岗位打分逻辑，支持自定义权重（供双队列复用）
+     * 优化点：
+     * - 动态基础分：画像完整 base=50，不完整 base=45（拉大差距）
+     * - 兴趣命中奖励：兴趣完全命中的岗位额外 +8 分，部分相关 +3 分（拉开 primary/fallback 分差）
      * @param userSkills 用户技能列表
      * @param userInterest 兴趣方向
      * @param userCity 期望城市
@@ -110,6 +111,11 @@ public class JobMatchingServiceImpl implements JobMatchingService {
                                                              String userInterest, String userCity,
                                                              AssessmentResult latestResult, List<JobPosition> jobs,
                                                              double skillW, double interestW, double cityW, double assessW) {
+        // 动态基础分：画像完整时 base=50，不完整时 base=45
+        boolean profileComplete = userInterest != null && !userInterest.isBlank()
+                && userCity != null && !userCity.isBlank();
+        double baseScore = profileComplete ? 50.0 : 45.0;
+
         List<JobMatchResponse> results = new ArrayList<>();
         int rank = 0;
         for (JobPosition job : jobs) {
@@ -120,11 +126,11 @@ public class JobMatchingServiceImpl implements JobMatchingService {
             List<Skill> skills = skillIds.isEmpty() ? new ArrayList<>() : skillMapper.selectBatchIds(skillIds);
             Map<Long, Skill> skillMap = skills.stream().collect(Collectors.toMap(Skill::getId, s -> s));
 
-            // 1. 技能匹配比例（0~1）：使用模糊匹配（别名+标准化+包含）
+            // 1. 技能匹配比例（0~1）
             int matchedCount = 0;
             for (JobSkillRequirement req : requirements) {
                 Skill skill = skillMap.get(req.getSkillId());
-                if (skill != null && userHasSkill(userSkills, skill.getName())) {
+                if (skill != null && userSkills.contains(skill.getName())) {
                     matchedCount++;
                 }
             }
@@ -140,28 +146,38 @@ public class JobMatchingServiceImpl implements JobMatchingService {
             double cityScore = cityW * cityRatio;
 
             // 4. 测评分（0~1）：使用维度加权计算，让低总分用户在适配岗位上有合理匹配度
-            // 例如：编程0/逻辑20/产品40/技术素养60/沟通20 的用户在产品/技术支持类岗位 assessRatio ≈ 0.45-0.60
             double assessRatio = AssessmentWeightAdjuster.assessRatioForJob(job, latestResult);
             double assessScore = assessW * assessRatio;
 
-            // 5. 基础分 50 + 加权满分 50（weighted 满分100，乘0.5得50）
+            // 5. 基础分 + 加权满分 50（weighted 满分100，乘0.5得50）
             double weighted = skillScore + interestScore + cityScore + assessScore;
-            double total = 50.0 + weighted * 0.5;
+            double total = baseScore + weighted * 0.5;
 
-            // 6. 区分度因子（打破同分，基于技能匹配数和岗位排名）
+            // 6. 兴趣奖励分：兴趣完全命中额外 +8，部分相关 +3，拉开 primary 与 fallback 的分差
+            double interestBonus = 0;
+            if (userInterest != null && !userInterest.isBlank()) {
+                if (interestRatio >= 1.0) {
+                    interestBonus = 8.0;
+                } else if (interestRatio >= 0.5) {
+                    interestBonus = 3.0;
+                }
+            }
+            total += interestBonus;
+
+            // 7. 区分度因子（打破同分，基于技能匹配数和岗位排名）
             double diff = (matchedCount * 0.5) - (rank * 0.3);
             total += diff;
 
-            // 7. 限制区间 [50, 99]
+            // 8. 限制区间 [50, 99]
             total = Math.max(50.0, Math.min(99.0, total));
 
-            // 技能标签和缺口：使用模糊匹配判断
+            // 技能标签和缺口
             List<JobMatchResponse.SkillTagVO> skillTags = new ArrayList<>();
             List<SkillGapVO> skillGaps = new ArrayList<>();
             for (JobSkillRequirement req : requirements) {
                 Skill skill = skillMap.get(req.getSkillId());
                 if (skill == null) continue;
-                if (userHasSkill(userSkills, skill.getName())) {
+                if (userSkills.contains(skill.getName())) {
                     skillTags.add(JobMatchResponse.SkillTagVO.builder()
                             .skillName(skill.getName()).status("mastered").build());
                 } else {
@@ -266,8 +282,7 @@ public class JobMatchingServiceImpl implements JobMatchingService {
     @Override
     public List<JobPosition> searchJobs(String keyword, String city) {
         LambdaQueryWrapper<JobPosition> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(JobPosition::getIsDeleted, 0)
-               .eq(JobPosition::getPublishStatus, 1);
+        wrapper.eq(JobPosition::getIsDeleted, 0);
         if (keyword != null && !keyword.isEmpty()) {
             wrapper.and(w -> w.like(JobPosition::getTitle, keyword)
                     .or().like(JobPosition::getDirection, keyword)
@@ -291,62 +306,5 @@ public class JobMatchingServiceImpl implements JobMatchingService {
         } catch (Exception e) {
             return new ArrayList<>();
         }
-    }
-
-    /**
-     * 标准化技能名称用于模糊匹配（忽略大小写、去空格、别名映射）
-     */
-    private static final Map<String, String> SKILL_ALIAS = new HashMap<>();
-    static {
-        SKILL_ALIAS.put("vue", "Vue.js");
-        SKILL_ALIAS.put("vuejs", "Vue.js");
-        SKILL_ALIAS.put("reactjs", "React");
-        SKILL_ALIAS.put("spring", "Spring Boot");
-        SKILL_ALIAS.put("springboot", "Spring Boot");
-        SKILL_ALIAS.put("spring cloud", "Spring Cloud");
-        SKILL_ALIAS.put("springcloud", "Spring Cloud");
-        SKILL_ALIAS.put("node", "Node.js");
-        SKILL_ALIAS.put("nodejs", "Node.js");
-        SKILL_ALIAS.put("golang", "Go");
-        SKILL_ALIAS.put("cpp", "C++");
-        SKILL_ALIAS.put("k8s", "Kubernetes");
-        SKILL_ALIAS.put("es", "Elasticsearch");
-        SKILL_ALIAS.put("elastic", "Elasticsearch");
-        SKILL_ALIAS.put("pg", "PostgreSQL");
-        SKILL_ALIAS.put("mongo", "MongoDB");
-    }
-
-    /**
-     * 判断用户技能列表是否包含某个技能名称（标准化模糊匹配）
-     */
-    private boolean skillMatches(String userSkill, String jobSkillName) {
-        if (userSkill == null || jobSkillName == null) return false;
-        // 1. 精确匹配
-        if (userSkill.equals(jobSkillName)) return true;
-        // 2. 标准化后匹配（忽略大小写、去空格）
-        String normalizedUser = userSkill.trim().toLowerCase().replaceAll("\\s+", "");
-        String normalizedJob = jobSkillName.trim().toLowerCase().replaceAll("\\s+", "");
-        if (normalizedUser.equals(normalizedJob)) return true;
-        // 3. 别名映射匹配
-        String aliased = SKILL_ALIAS.getOrDefault(normalizedUser, normalizedUser);
-        if (aliased.equalsIgnoreCase(jobSkillName)) return true;
-        // 4. 包含匹配（如 "spring boot" 包含 "spring"）
-        if (normalizedUser.contains(normalizedJob) || normalizedJob.contains(normalizedUser)) return true;
-        // 5. 单词级别包含（如 "vue" 匹配 "Vue.js" 中的 "vue"）
-        String[] words = jobSkillName.toLowerCase().split("[^a-zA-Z0-9#+]+");
-        for (String word : words) {
-            if (word.length() >= 2 && normalizedUser.equals(word)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * 判断用户技能列表中是否包含某个技能名称（支持模糊匹配）
-     */
-    private boolean userHasSkill(List<String> userSkills, String jobSkillName) {
-        for (String userSkill : userSkills) {
-            if (skillMatches(userSkill, jobSkillName)) return true;
-        }
-        return false;
     }
 }

@@ -36,23 +36,10 @@
               </div>
             </div>
           </div>
-          <!-- 追问状态提示 -->
-          <div v-if="missingDimensions.length" class="clarify-hint">
-            <span class="clarify-hint-icon">💡</span>
-            <span>为了更精准地推荐，请补充：</span>
-            <span
-              v-for="dim in missingDimensions"
-              :key="dim"
-              class="clarify-dim-tag"
-            >
-              {{ getMissingDimensionText(dim) }}
-            </span>
-          </div>
-
           <ChatWindow
             :messages="messages"
             :loading="loading"
-            :placeholder="missingDimensions.length ? '先补充以上信息，AI 会为你推荐方向...' : '描述你的职业兴趣和偏好...'"
+            placeholder="描述你的职业兴趣和偏好..."
             @send="handleSend"
           />
         </div>
@@ -60,6 +47,12 @@
 
       <!-- 右侧：推荐结果 -->
       <el-col :lg="14" :md="12" :sm="24">
+        <!-- 条件过滤未命中提示横幅 -->
+        <div v-if="isFilteredResult && (primaryResults.length || fallbackResults.length || results.length)" class="filter-notice">
+          <span class="notice-icon">💡</span>
+          <span>当前结果为最接近推荐，可尝试放宽条件（如降低匹配度阈值）获取更多结果。</span>
+        </div>
+
         <!-- 双队列模式：意向方向 + 稳妥备选 -->
         <div class="results-panel" v-if="primaryResults.length && fallbackResults.length">
           <div class="results-header">
@@ -235,7 +228,7 @@
           </div>
           <template v-if="hasQueried">
             <h3>暂时没有匹配到合适的推荐方向</h3>
-            <p>你可以尝试描述更多兴趣、技能或目标，<br/>我会重新为你分析最合适的职业方向</p>
+            <p>你可以尝试描述更多兴趣、技能或目标，<br/>或放宽匹配条件（如降低匹配度阈值），我会重新为你分析</p>
           </template>
           <template v-else>
             <h3>探索你的职业方向</h3>
@@ -279,20 +272,9 @@ const results = ref<any[]>([])
 const primaryResults = ref<any[]>([])
 /** 双队列：稳妥备选方向（画像/测评客观适配） */
 const fallbackResults = ref<any[]>([])
-/** 当前缺失的信息维度，用于追问状态提示 */
-const missingDimensions = ref<string[]>([])
 const hasQueried = ref(false)
-
-/** 将 missingDimensions 映射为中文提示 */
-function getMissingDimensionText(dim: string): string {
-  const map: Record<string, string> = {
-    interest: '感兴趣的方向',
-    city: '期望城市',
-    assessment: '能力测评',
-    preference: '职业偏好'
-  }
-  return map[dim] || dim
-}
+/** 是否为条件过滤未命中后的最接近推荐（后端 overallAnalysis 含"暂未筛选到满足要求"时为 true） */
+const isFilteredResult = ref(false)
 
 function getRoleIcon(title: string): string {
   const map: Record<string, string> = {
@@ -326,13 +308,13 @@ function applyRecommendation(data: any, userText?: string) {
     results.value = []
     primaryResults.value = []
     fallbackResults.value = []
-    missingDimensions.value = data.missingDimensions || []
+    isFilteredResult.value = false
     const clarifyContent = data.overallAnalysis || '为了给你推荐更合适的岗位，请告诉我你感兴趣的方向和期望工作的城市。'
     messages.value.push({ role: 'assistant', content: clarifyContent })
     return
   }
-  // 正常推荐场景：清空缺失维度
-  missingDimensions.value = []
+  // 检测是否为条件过滤未命中后的最接近推荐
+  isFilteredResult.value = !!(data.overallAnalysis && data.overallAnalysis.includes('暂未筛选到满足要求'))
   // 正常推荐场景：优先使用双队列（意向方向 + 稳妥备选），无则降级到单队列
   const primary = data.primaryDirections || []
   const fallback = data.fallbackDirections || []
@@ -346,13 +328,14 @@ function applyRecommendation(data: any, userText?: string) {
     fallbackResults.value = []
   }
   let content = data.overallAnalysis || '分析完成！我已经根据你的偏好匹配了以下职业方向，请在右侧查看详细推荐结果。'
-  if (content.includes('暂未筛选到满足要求的岗位')) {
+  if (isFilteredResult.value) {
     content += '\n（提示：以下为系统根据你的画像与测评补充的最接近推荐，可尝试放宽条件获取更多结果。）'
   }
   messages.value.push({ role: 'assistant', content })
 }
 
 async function handleSend(text: string) {
+  if (loading.value) return
   messages.value.push({ role: 'user', content: text })
   loading.value = true
   hasQueried.value = true
@@ -360,6 +343,7 @@ async function handleSend(text: string) {
   results.value = []
   primaryResults.value = []
   fallbackResults.value = []
+  isFilteredResult.value = false
   try {
     // 发送偏好文本 + 完整对话历史
     const history = messages.value.slice(0, -1).map(m => ({
@@ -388,7 +372,10 @@ onMounted(async () => {
   loading.value = true
   hasQueried.value = true
   try {
-    const res: any = await exploreFromAssessment(resultId)
+    // 从已有对话消息中提取最后一次用户表达的兴趣方向
+    // 保持兴趣一致性，避免测评入口覆盖用户已表达的真实兴趣
+    const lastInterest = getLastExpressedInterest()
+    const res: any = await exploreFromAssessment(resultId, lastInterest)
     const userText = '我刚完成能力测评，请基于我的测评结果推荐合适的职业方向。'
     applyRecommendation(res.data, userText)
   } catch (e: any) {
@@ -396,6 +383,29 @@ onMounted(async () => {
     messages.value.push({ role: 'system', content: '基于测评的推荐失败，请在下方输入你的偏好重新尝试。' })
   } finally { loading.value = false }
 })
+
+/**
+ * 从对话消息中提取最后一次用户表达的兴趣方向
+ * 遍历用户消息（从后往前），匹配常见兴趣关键词
+ * @returns 兴趣方向字符串（如"前端"），无匹配返回 undefined
+ */
+function getLastExpressedInterest(): string | undefined {
+  const interestKeywords = [
+    'Java', 'Python', '前端', '后端', '全栈', '算法', '数据', '大数据',
+    'AI', '人工智能', '机器学习', '云计算', '运维', '测试', '产品',
+    'UI', 'UX', '设计', '运营'
+  ]
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    const msg = messages.value[i]
+    if (msg.role !== 'user') continue
+    const content = msg.content as string
+    if (!content) continue
+    for (const kw of interestKeywords) {
+      if (content.includes(kw)) return kw
+    }
+  }
+  return undefined
+}
 </script>
 
 <style scoped lang="scss">
@@ -482,32 +492,6 @@ onMounted(async () => {
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 
-.clarify-hint {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px 16px;
-  background: #fef3c7;
-  border-bottom: 1px solid #fde68a;
-  font-size: 13px;
-  color: #92400e;
-}
-
-.clarify-hint-icon {
-  font-size: 14px;
-}
-
-.clarify-dim-tag {
-  padding: 2px 10px;
-  border-radius: 12px;
-  background: #fff;
-  border: 1px solid #fbbf24;
-  font-size: 12px;
-  font-weight: 600;
-  color: #b45309;
-}
-
 .chat-panel-header {
   display: flex;
   align-items: center;
@@ -547,6 +531,22 @@ onMounted(async () => {
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   min-height: 200px;
   & + .results-panel { margin-top: 16px; }
+}
+
+// 条件过滤未命中提示横幅
+.filter-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fef9e7 100%);
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.5;
+  .notice-icon { font-size: 18px; flex-shrink: 0; }
 }
 
 .results-header {

@@ -25,15 +25,16 @@
     </div>
     <div class="chat-input" v-if="!readonly">
       <div class="chat-input-row">
-        <el-input
-          v-model="inputText"
-          :placeholder="placeholder"
-          @keyup.enter="send"
-          type="textarea"
-          :rows="2"
-          class="chat-textarea"
-        />
-        <el-button type="primary" @click="send" :loading="loading" class="chat-send-btn">
+          <el-input
+            v-model="inputText"
+            :placeholder="placeholder"
+            @keyup.enter="send"
+            type="textarea"
+            :rows="2"
+            :disabled="loading"
+            class="chat-textarea"
+          />
+          <el-button type="primary" @click="send" :loading="loading" :disabled="loading" class="chat-send-btn">
           <el-icon><Promotion /></el-icon>
         </el-button>
       </div>
@@ -63,6 +64,7 @@ watch(() => props.messages.length, () => {
 })
 
 function send() {
+  if (props.loading) return
   if (!inputText.value.trim()) return
   emit('send', inputText.value.trim())
   inputText.value = ''

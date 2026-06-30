@@ -18,4 +18,11 @@ public class CareerExplorationRequest {
 
     /** 来源：ASSESSMENT（从测评页进入）、EXPLORE（单独探索） */
     private String source;
+
+    /**
+     * 用户在对话中已表达的兴趣方向（用于测评页入口保持兴趣一致性）
+     * 当从测评页跳转时，前端将对话中最后一次用户表达的兴趣方向传入，
+     * 避免测评入口的 preferences 文本无兴趣关键词导致兴趣被覆盖为画像默认值
+     */
+    private String expressedInterest;
 }

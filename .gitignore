@@ -105,14 +105,29 @@ dump.rdb
 .output/
 *.tsbuildinfo
 
-# ===== 项目临时/计划文件 =====
-test_conn.json
-.trae/
+# ===== AI 工具 / IDE 内部数据 =====
 .codebuddy/
+.trae/
 
-# ===== 上传文件目录（运行时生成） =====
-软件实训项目-code/backend/uploads/
+# ===== 构建产物目录 =====
+BOOT-INF/
 
+# ===== 用户上传文件 =====
+uploads/
+
+# ===== 临时测试脚本与结果 =====
+deepseek_test_results.json
+deepseek_extra_test_results.json
+deepseek_api_test_report.md
+run_deepseek_tests.py
+run_deepseek_extra_tests.py
+run_clarification_tests.py
+run_quick_test.py
+test_conn.json
+
+# ===== 临时 SQL 脚本 =====
+reset_pwd.sql
+tmp_*.sql
 
 
 
