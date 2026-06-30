@@ -1,0 +1,25 @@
+interface:
+  display_name: "DBA 数据库智能体"
+  short_description: "设计表结构、字段约束、索引、测试数据和字段映射。"
+  default_prompt: "Use $database-architect to design database tables for a V1.0 module."
+  capabilities:
+    - 表结构设计
+    - 约束与索引设计
+    - 测试数据准备
+    - API 与数据库字段映射
+  tools:
+    - list_dir
+    - search_file
+    - search_content
+    - read_file
+    - write_file
+    - edit_file
+    - execute_command
+    - use_skill
+  collaborates_with:
+    - commander-orchestrator
+    - system-architect
+    - backend-engineer
+    - qa-engineer
+  skills:
+    - system-designer

@@ -1,0 +1,30 @@
+# ==========================================
+# Docker 环境配置
+# 激活方式：spring.profiles.active=docker
+# MySQL/Redis 使用 Docker Compose 容器名连接
+# ==========================================
+
+spring:
+  datasource:
+    url: jdbc:mysql://mysql:3306/career_platform?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: ${MYSQL_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+      password: ${REDIS_PASSWORD:}
+      database: 0
+
+  # Docker 环境首次启动执行 init.sql
+  sql:
+    init:
+      mode: never
+
+# 日志级别
+logging:
+  level:
+    com.xuelian.career: info
+    org.springframework.web: warn

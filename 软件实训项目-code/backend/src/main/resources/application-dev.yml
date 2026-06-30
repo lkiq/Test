@@ -1,0 +1,77 @@
+# ==========================================
+# 开发环境配置
+# ==========================================
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/career_platform?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: ${MYSQL_PASSWORD:123456}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      connection-timeout: 30000
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+  # SQL 初始化（首次启动时执行 init.sql）
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+
+  # 邮件配置
+  mail:
+    host: smtp.163.com
+    port: 465
+    username: lhj424@163.com
+    password: dastwupelosyeaic
+    protocol: smtps
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          starttls:
+            enable: true
+            required: true
+
+# 健康检查配置（禁用邮件健康检查，避免占位凭据导致DOWN）
+management:
+  health:
+    mail:
+      enabled: false
+
+# 日志级别
+logging:
+  level:
+    com.xuelian.career: debug
+    org.springframework.web: info
+
+# DeepSeek API Key（通过环境变量 DEEPSEEK_API_KEY 注入，禁止硬编码）
+deepseek:
+  api-key: ${DEEPSEEK_API_KEY}
+
+# 人才推荐评分配置（维度映射在 RecommendConfig.java 硬编码，避免中文 key 绑定问题）
+recommend:
+  scoring:
+    weight-skill: 0.30
+    weight-assessment: 0.25
+    weight-learning: 0.15
+    weight-learning-result: 0.20
+    weight-basic: 0.10

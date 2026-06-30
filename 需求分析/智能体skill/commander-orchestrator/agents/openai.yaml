@@ -1,0 +1,30 @@
+interface:
+  display_name: "指挥官调度智能体"
+  short_description: "统筹多角色协作，推进 V1.0 模块开发、联调、测试和复盘。"
+  default_prompt: "Use $commander-orchestrator to coordinate the V1.0 daily development loop."
+  capabilities:
+    - 任务分派与排期
+    - 模块闭环跟踪
+    - 阻塞识别与升级
+    - 联调问题清单维护
+    - 周复盘与下周计划
+  tools:
+    - list_dir
+    - search_file
+    - search_content
+    - read_file
+    - write_file
+    - edit_file
+    - execute_command
+    - use_skill
+    - task
+  collaborates_with:
+    - requirement-analyst
+    - project-manager
+    - system-architect
+    - database-architect
+    - backend-engineer
+    - frontend-engineer
+    - qa-engineer
+    - ops-reviewer
+  skills: []

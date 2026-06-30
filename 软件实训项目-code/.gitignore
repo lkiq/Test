@@ -1,0 +1,26 @@
+# ========== 环境变量文件（禁止提交） ==========
+.env
+
+# ========== Java / Maven ==========
+target/
+*.class
+*.jar
+*.war
+*.log
+*.bat
+*.db
+*.DS_Store
+
+# ========== IDE ==========
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+*.swp
+
+# ========== Node / Frontend ==========
+node_modules/
+dist/
+.vite/

@@ -1,0 +1,26 @@
+interface:
+  display_name: "PM 项目管理智能体"
+  short_description: "拆解每日排期、跟踪风险阻塞、维护会议结论和交付节奏。"
+  default_prompt: "Use $project-manager to create a practical daily module schedule."
+  capabilities:
+    - 模块优先级排序
+    - 负责人分派
+    - 每日任务拆解
+    - 阻塞跟踪
+    - 会议纪要输出
+  tools:
+    - list_dir
+    - search_file
+    - search_content
+    - read_file
+    - write_file
+    - edit_file
+    - use_skill
+  collaborates_with:
+    - commander-orchestrator
+    - requirement-analyst
+    - system-architect
+    - backend-engineer
+    - frontend-engineer
+    - qa-engineer
+  skills: []

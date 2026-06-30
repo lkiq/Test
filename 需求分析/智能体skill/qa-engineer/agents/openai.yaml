@@ -1,0 +1,26 @@
+interface:
+  display_name: "QA 测试工程智能体"
+  short_description: "编写测试用例，验证接口、页面、异常和端到端流程。"
+  default_prompt: "Use $qa-engineer to test one completed module before the next starts."
+  capabilities:
+    - 测试用例编写
+    - API 测试
+    - 页面测试
+    - 端到端验证
+    - 缺陷与复测记录
+  tools:
+    - list_dir
+    - search_file
+    - search_content
+    - read_file
+    - write_file
+    - edit_file
+    - execute_command
+    - use_skill
+  collaborates_with:
+    - commander-orchestrator
+    - requirement-analyst
+    - system-architect
+    - backend-engineer
+    - frontend-engineer
+  skills: []

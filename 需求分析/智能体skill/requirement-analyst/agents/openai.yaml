@@ -1,0 +1,27 @@
+interface:
+  display_name: "RA 需求分析智能体"
+  short_description: "梳理模块需求、业务场景、验收标准和需求追踪矩阵。"
+  default_prompt: "Use $requirement-analyst to refine module requirements and acceptance criteria."
+  capabilities:
+    - 模块边界识别
+    - 用户场景编写
+    - 业务规则提炼
+    - 验收标准制定
+    - 需求追踪矩阵维护
+  tools:
+    - list_dir
+    - search_file
+    - search_content
+    - read_file
+    - write_file
+    - edit_file
+    - use_skill
+    - web_search
+    - web_fetch
+  collaborates_with:
+    - commander-orchestrator
+    - system-architect
+    - qa-engineer
+  skills:
+    - requirements-clarity
+    - project-requirements

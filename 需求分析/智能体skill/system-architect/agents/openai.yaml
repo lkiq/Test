@@ -1,0 +1,33 @@
+interface:
+  display_name: "SA 系统架构智能体"
+  short_description: "输出 HLD、接口契约、模块边界和前后端联调规则。"
+  default_prompt: "Use $system-architect to turn requirements into HLD and API contracts."
+  capabilities:
+    - 模块边界定义
+    - 接口契约设计
+    - 前端交互约束
+    - 后端约束设计
+    - QA 测试关注点梳理
+  tools:
+    - list_dir
+    - search_file
+    - search_content
+    - read_file
+    - write_file
+    - edit_file
+    - execute_command
+    - connect_cloud_service
+    - preview_url
+    - use_skill
+    - web_search
+    - web_fetch
+  collaborates_with:
+    - commander-orchestrator
+    - requirement-analyst
+    - database-architect
+    - backend-engineer
+    - frontend-engineer
+    - qa-engineer
+  skills:
+    - system-designer
+    - project-requirements

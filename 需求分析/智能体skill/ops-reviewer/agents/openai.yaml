@@ -1,0 +1,27 @@
+interface:
+  display_name: "OP 旁听评审智能体"
+  short_description: "评审交付物、协作交接、部署风险、遗留问题和复盘质量。"
+  default_prompt: "Use $ops-reviewer to review delivery artifacts and handoff risks."
+  capabilities:
+    - 交付物完整性检查
+    - 交接断点识别
+    - 环境与部署风险评估
+    - 遗留问题跟踪
+    - 复盘与改进建议
+  tools:
+    - list_dir
+    - search_file
+    - search_content
+    - read_file
+    - write_file
+    - edit_file
+    - use_skill
+  collaborates_with:
+    - commander-orchestrator
+    - project-manager
+    - requirement-analyst
+    - system-architect
+    - backend-engineer
+    - frontend-engineer
+    - qa-engineer
+  skills: []

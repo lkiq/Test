@@ -1,0 +1,121 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+*.whl
+dist/
+build/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.tox/
+coverage/
+htmlcov/
+*.cover
+
+# ===== Node.js =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# ===== Java =====
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+target/
+*.ctxt
+.mtj.tmp/
+hs_err_pid*
+
+# ===== Maven / Gradle =====
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.settings/
+.classpath
+.project
+.factorypath
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.iml
+*.iws
+*.ipr
+.sonarlint/
+
+# ===== OS (Windows / Mac / Linux) =====
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+ehthumbs.db
+Icon?
+
+# ===== 临时文件 =====
+*.tmp
+*.temp
+*.bak
+*.orig
+*.log
+
+# ===== 压缩包 =====
+*.7z
+*.rar
+*.zip
+*.tar
+*.gz
+*.bz2
+*.xz
+
+# ===== 数据库文件 =====
+*.db
+*.sqlite
+*.sqlite3
+dump.rdb
+
+# ===== 环境变量 =====
+.env
+.env.local
+.env.*.local
+
+# ===== Docker =====
+.docker/
+
+# ===== 前端构建产物 =====
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.output/
+*.tsbuildinfo
+
+# ===== 项目临时/计划文件 =====
+test_conn.json
+.trae/
+.codebuddy/
+
+# ===== 项目特定文件 =====
+uploads/
+mysql-runtime/data/
+.playwright-cli/
+nul'
+.git_backup_old/
+BOOT-INF/
+
+

@@ -1,0 +1,31 @@
+interface:
+  display_name: "BE 后端工程智能体"
+  short_description: "按 HLD 开发 API，处理校验、业务逻辑、错误响应和联调。"
+  default_prompt: "Use $backend-engineer to implement backend APIs from the HLD contract."
+  capabilities:
+    - 接口骨架实现
+    - 参数校验
+    - 业务逻辑与数据库访问
+    - 统一响应格式
+    - 跨域与 mock 支持
+    - 自测与联调说明
+  tools:
+    - list_dir
+    - search_file
+    - search_content
+    - read_file
+    - write_file
+    - edit_file
+    - execute_command
+    - read_lints
+    - connect_cloud_service
+    - preview_url
+    - use_skill
+  collaborates_with:
+    - commander-orchestrator
+    - system-architect
+    - database-architect
+    - frontend-engineer
+    - qa-engineer
+  skills:
+    - system-designer

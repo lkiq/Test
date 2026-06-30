@@ -1,0 +1,64 @@
+# ==========================================
+# AI智能求职辅导平台 - 主配置文件
+# 默认激活开发环境 (dev)
+# ==========================================
+
+spring:
+  profiles:
+    active: dev
+  application:
+    name: career-platform
+
+# 文件上传配置
+file:
+  upload:
+    path: ./uploads          # 简历文件存储路径
+    max-size: 5MB            # 单文件最大大小
+    allowed-types:
+      - application/pdf
+      - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+
+# JWT 配置
+jwt:
+  secret: ${JWT_SECRET:career-platform-secret-key-2026}
+  expiration: 604800         # Token 过期时间（秒），默认 7 天
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    # 下划线转驼峰命名
+    map-underscore-to-camel-case: true
+    # SQL 日志（开发环境启用）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      # 逻辑删除字段
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      # 主键策略（自增）
+      id-type: auto
+
+# DeepSeek AI 公共配置（敏感信息如 api-key 请在环境级配置文件中设置）
+deepseek:
+  api-url: https://api.deepseek.com/v1/chat/completions
+  model: deepseek-chat
+  timeout-seconds: 60
+  max-retries: 1
+  cache-ttl: 3600
+
+# 学习路径配置
+learning:
+  search-url-template: ${LEARNING_SEARCH_URL:https://search.bilibili.com/all?keyword={keyword}}
+
+# 应用级配置
+app:
+  mastery:
+    migration-enabled: false   # 历史数据迁移开关（部署后设为 true 执行一次，之后保持 false）
+
+# Actuator 健康检查
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

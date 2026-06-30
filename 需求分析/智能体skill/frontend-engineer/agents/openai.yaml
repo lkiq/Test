@@ -1,0 +1,31 @@
+interface:
+  display_name: "FE 前端工程智能体"
+  short_description: "开发页面并对接 API，处理状态反馈、字段映射和联调问题。"
+  default_prompt: "Use $frontend-engineer to build pages and connect backend APIs."
+  capabilities:
+    - 页面结构搭建
+    - 字段对齐与映射
+    - API 接入与状态处理
+    - 交互状态完善
+    - 联调问题记录
+    - 自测说明输出
+  tools:
+    - list_dir
+    - search_file
+    - search_content
+    - read_file
+    - write_file
+    - edit_file
+    - execute_command
+    - read_lints
+    - connect_cloud_service
+    - preview_url
+    - use_skill
+    - web_fetch
+  collaborates_with:
+    - commander-orchestrator
+    - system-architect
+    - backend-engineer
+    - qa-engineer
+  skills:
+    - system-designer
