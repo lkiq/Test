@@ -112,7 +112,7 @@ test_conn.json
 
 # ===== 项目特定文件 =====
 uploads/
-mysql-runtime/data/
+**/mysql-runtime/data/
 .playwright-cli/
 nul'
 .git_backup_old/
