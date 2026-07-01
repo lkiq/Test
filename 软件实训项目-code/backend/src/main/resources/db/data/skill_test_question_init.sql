@@ -172,7 +172,7 @@ INSERT INTO `skill_test_question` (`skill_id`, `stage`, `question`, `options`, `
 -- Vue FRAMEWORK
 INSERT INTO `skill_test_question` (`skill_id`, `stage`, `question`, `options`, `correct_answer`, `difficulty`) VALUES
 ((SELECT id FROM skill WHERE name = 'Vue 3' AND is_deleted = 0 LIMIT 1), 'FRAMEWORK', 'Vue 3 中 watch 和 watchEffect 的区别是？', '["A. 没有区别","B. watch 需要指定监听源，watchEffect 自动收集依赖","C. watchEffect 不需要副作用","D. watch 不支持深度监听"]', 'B', '中等'),
-((SELECT id FROM skill WHERE name = 'Vue 3' AND is_deleted = 0 LIMIT 1), 'FRAMEWORK', 'Vue Router 如何实现路由懒加载？', '["A. 使用 require","B. component: () => import('@/views/xxx.vue')","C. 直接 import","D. 不需要"]', 'B', '中等'),
+((SELECT id FROM skill WHERE name = 'Vue 3' AND is_deleted = 0 LIMIT 1), 'FRAMEWORK', 'Vue Router 如何实现路由懒加载？', '["A. 使用 require","B. component: () => import(路径)","C. 直接 import","D. 不需要"]', 'B', '中等'),
 ((SELECT id FROM skill WHERE name = 'Vue 3' AND is_deleted = 0 LIMIT 1), 'FRAMEWORK', 'Pinia 相比 Vuex 的优势是什么？', '["A. 没有优势","B. 更简洁的 API、完整的 TypeScript 支持、去除了 mutations","C. Pinia 功能更少","D. Vuex 更好"]', 'B', '中等'),
 ((SELECT id FROM skill WHERE name = 'Vue 3' AND is_deleted = 0 LIMIT 1), 'FRAMEWORK', 'Vue 3 组件通信方式有哪些？', '["A. 只有 props","B. props/emits、provide/inject、Pinia、事件总线","C. 只有 emit","D. 不能通信"]', 'B', '中等'),
 ((SELECT id FROM skill WHERE name = 'Vue 3' AND is_deleted = 0 LIMIT 1), 'FRAMEWORK', 'Vue 3 中 ref 和 reactive 的区别？', '["A. 没有区别","B. ref 包装基本类型需要 .value，reactive 直接访问属性","C. reactive 包装基本类型","D. ref 不能用于对象"]', 'B', '中等');

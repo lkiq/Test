@@ -1,0 +1,438 @@
+{
+  "test_time": "2026-06-30T23:28:03.663668",
+  "api_url": "https://api.deepseek.com/v1/chat/completions",
+  "model": "deepseek-chat",
+  "api_key_masked": "sk-5872d...78ba",
+  "summary": {
+    "total": 33,
+    "pass": 33,
+    "fail": 0,
+    "error": 0,
+    "pass_rate": "100.0%"
+  },
+  "by_category": {
+    "A-伪装闲聊": {
+      "total": 7,
+      "pass": 7
+    },
+    "B-含岗位字眼": {
+      "total": 6,
+      "pass": 6
+    },
+    "C-纯粹闲聊": {
+      "total": 7,
+      "pass": 7
+    },
+    "D-补充边界": {
+      "total": 10,
+      "pass": 10
+    },
+    "E-回归测试": {
+      "total": 3,
+      "pass": 3
+    }
+  },
+  "latency": {
+    "avg_ms": 1724,
+    "min_ms": 1347,
+    "max_ms": 2519
+  },
+  "results": [
+    {
+      "id": "A1",
+      "category": "A-伪装闲聊",
+      "question": "嗨，能聊聊后端开发那些事儿吗",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1738,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 592
+    },
+    {
+      "id": "A2",
+      "category": "A-伪装闲聊",
+      "question": "随便问问，Java工程师平时都干啥",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1613,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 591
+    },
+    {
+      "id": "A3",
+      "category": "A-伪装闲聊",
+      "question": "好奇问下，做前端有前途吗",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 2392,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 592
+    },
+    {
+      "id": "A4",
+      "category": "A-伪装闲聊",
+      "question": "闲聊一下，你觉得我搞数据分析怎么样",
+      "expected": "RECOMMENDATION",
+      "actual": "RECOMMENDATION",
+      "status": "PASS",
+      "latency_ms": 1845,
+      "raw_response": "{{\"intent\": \"RECOMMENDATION\"}}",
+      "error": null,
+      "tokens": 593
+    },
+    {
+      "id": "A5",
+      "category": "A-伪装闲聊",
+      "question": "打发时间，聊聊我适合产品还是技术",
+      "expected": "RECOMMENDATION",
+      "actual": "RECOMMENDATION",
+      "status": "PASS",
+      "latency_ms": 1627,
+      "raw_response": "{{\"intent\": \"RECOMMENDATION\"}}",
+      "error": null,
+      "tokens": 594
+    },
+    {
+      "id": "A6",
+      "category": "A-伪装闲聊",
+      "question": "无聊问问，帮我看看我做运维行不行",
+      "expected": "RECOMMENDATION",
+      "actual": "RECOMMENDATION",
+      "status": "PASS",
+      "latency_ms": 1507,
+      "raw_response": "{{\"intent\": \"RECOMMENDATION\"}}",
+      "error": null,
+      "tokens": 594
+    },
+    {
+      "id": "A7",
+      "category": "A-伪装闲聊",
+      "question": "顺嘴问一句，我是学计算机的能做什么",
+      "expected": "RECOMMENDATION",
+      "actual": "RECOMMENDATION",
+      "status": "PASS",
+      "latency_ms": 1702,
+      "raw_response": "{{\"intent\": \"RECOMMENDATION\"}}",
+      "error": null,
+      "tokens": 596
+    },
+    {
+      "id": "B1",
+      "category": "B-含岗位字眼",
+      "question": "Java后端岗位需要掌握哪些技术栈",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1882,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 591
+    },
+    {
+      "id": "B2",
+      "category": "B-含岗位字眼",
+      "question": "前端岗位的React和Vue哪个更值得学",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1806,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 594
+    },
+    {
+      "id": "B3",
+      "category": "B-含岗位字眼",
+      "question": "算法岗位平时用Python多还是C++多",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1515,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 593
+    },
+    {
+      "id": "B4",
+      "category": "B-含岗位字眼",
+      "question": "测试岗位的自动化测试框架怎么选",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1803,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 591
+    },
+    {
+      "id": "B5",
+      "category": "B-含岗位字眼",
+      "question": "DevOps岗位的CI/CD一般用什么工具",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1718,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 592
+    },
+    {
+      "id": "B6",
+      "category": "B-含岗位字眼",
+      "question": "后端岗位的微服务架构怎么拆分合理",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1768,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 592
+    },
+    {
+      "id": "C1",
+      "category": "C-纯粹闲聊",
+      "question": "你吃了吗",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1671,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 586
+    },
+    {
+      "id": "C2",
+      "category": "C-纯粹闲聊",
+      "question": "今天几号",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 2340,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 586
+    },
+    {
+      "id": "C3",
+      "category": "C-纯粹闲聊",
+      "question": "明天天气怎么样",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 2519,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 586
+    },
+    {
+      "id": "C4",
+      "category": "C-纯粹闲聊",
+      "question": "讲个笑话听听",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 2031,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 587
+    },
+    {
+      "id": "C5",
+      "category": "C-纯粹闲聊",
+      "question": "你会唱歌吗",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1592,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 586
+    },
+    {
+      "id": "C6",
+      "category": "C-纯粹闲聊",
+      "question": "你喜欢什么颜色",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1545,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 586
+    },
+    {
+      "id": "C7",
+      "category": "C-纯粹闲聊",
+      "question": "讲个故事吧",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1653,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 587
+    },
+    {
+      "id": "D1",
+      "category": "D-补充边界",
+      "question": "推荐适合我的方向",
+      "expected": "RECOMMENDATION",
+      "actual": "RECOMMENDATION",
+      "status": "PASS",
+      "latency_ms": 1428,
+      "raw_response": "{{\"intent\": \"RECOMMENDATION\"}}",
+      "error": null,
+      "tokens": 589
+    },
+    {
+      "id": "D2",
+      "category": "D-补充边界",
+      "question": "我想做AI算法方向",
+      "expected": "RECOMMENDATION",
+      "actual": "RECOMMENDATION",
+      "status": "PASS",
+      "latency_ms": 1716,
+      "raw_response": "{{\"intent\": \"RECOMMENDATION\"}}",
+      "error": null,
+      "tokens": 590
+    },
+    {
+      "id": "D3",
+      "category": "D-补充边界",
+      "question": "产品经理的日常工作是什么",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1540,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 588
+    },
+    {
+      "id": "D4",
+      "category": "D-补充边界",
+      "question": "帮我推荐Java后端相关的方向",
+      "expected": "RECOMMENDATION",
+      "actual": "RECOMMENDATION",
+      "status": "PASS",
+      "latency_ms": 1617,
+      "raw_response": "{{\"intent\": \"RECOMMENDATION\"}}",
+      "error": null,
+      "tokens": 591
+    },
+    {
+      "id": "D5",
+      "category": "D-补充边界",
+      "question": "后端开发和前端开发哪个前景更好",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1603,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 590
+    },
+    {
+      "id": "D6",
+      "category": "D-补充边界",
+      "question": "我适合做数据分析还是算法",
+      "expected": "RECOMMENDATION",
+      "actual": "RECOMMENDATION",
+      "status": "PASS",
+      "latency_ms": 1590,
+      "raw_response": "{{\"intent\": \"RECOMMENDATION\"}}",
+      "error": null,
+      "tokens": 591
+    },
+    {
+      "id": "D7",
+      "category": "D-补充边界",
+      "question": "Java后端开发面试应该怎么准备",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1663,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 590
+    },
+    {
+      "id": "D8",
+      "category": "D-补充边界",
+      "question": "推荐匹配度高于80的岗位",
+      "expected": "RECOMMENDATION",
+      "actual": "RECOMMENDATION",
+      "status": "PASS",
+      "latency_ms": 1347,
+      "raw_response": "{{\"intent\": \"RECOMMENDATION\"}}",
+      "error": null,
+      "tokens": 592
+    },
+    {
+      "id": "D9",
+      "category": "D-补充边界",
+      "question": "请介绍一下测试工程师这个岗位",
+      "expected": "GENERAL",
+      "actual": "GENERAL",
+      "status": "PASS",
+      "latency_ms": 1427,
+      "raw_response": "{{\"intent\": \"GENERAL\"}}",
+      "error": null,
+      "tokens": 589
+    },
+    {
+      "id": "D10",
+      "category": "D-补充边界",
+      "question": "我想从事云计算相关的工作，有什么建议",
+      "expected": "RECOMMENDATION",
+      "actual": "RECOMMENDATION",
+      "status": "PASS",
+      "latency_ms": 1473,
+      "raw_response": "{{\"intent\": \"RECOMMENDATION\"}}",
+      "error": null,
+      "tokens": 593
+    },
+    {
+      "id": "E1",
+      "category": "E-回归测试",
+      "question": "推荐匹配度高于80的岗位",
+      "expected": "RECOMMENDATION",
+      "actual": "RECOMMENDATION",
+      "status": "PASS",
+      "latency_ms": 1792,
+      "raw_response": "{{\"intent\": \"RECOMMENDATION\"}}",
+      "error": null,
+      "tokens": 592
+    },
+    {
+      "id": "E2",
+      "category": "E-回归测试",
+      "question": "推荐Java相关的方向",
+      "expected": "RECOMMENDATION",
+      "actual": "RECOMMENDATION",
+      "status": "PASS",
+      "latency_ms": 1735,
+      "raw_response": "{{\"intent\": \"RECOMMENDATION\"}}",
+      "error": null,
+      "tokens": 589
+    },
+    {
+      "id": "E3",
+      "category": "E-回归测试",
+      "question": "推荐适合我的方向",
+      "expected": "RECOMMENDATION",
+      "actual": "RECOMMENDATION",
+      "status": "PASS",
+      "latency_ms": 1700,
+      "raw_response": "{{\"intent\": \"RECOMMENDATION\"}}",
+      "error": null,
+      "tokens": 589
+    }
+  ]
+}

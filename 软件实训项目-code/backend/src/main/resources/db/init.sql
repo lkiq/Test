@@ -563,7 +563,7 @@ INSERT INTO `job_position` (`title`, `direction`, `jd`, `city`, `salary_range`, 
 ('敏捷教练', '管理', '推广敏捷开发实践，辅导团队进行Scrum/Kanban转型，提升研发效能。', '杭州', '18K-30K', '网易', '全职', '3-5年', '本科', '2026-06-15');
 
 -- 岗位技能要求关联数据（覆盖所有70+岗位，每个岗位关联3-8个技能）
-INSERT INTO `job_skill_requirement` (`job_id`, `skill_id`, `required_level`, `weight`) VALUES
+INSERT IGNORE INTO `job_skill_requirement` (`job_id`, `skill_id`, `required_level`, `weight`) VALUES
 -- ===== 后端开发 (1-10, 57-60) =====
 -- Java后端开发工程师(1)
 (1,1,'精通',3.0),(1,7,'精通',3.0),(1,9,'熟练',2.0),(1,15,'熟练',2.0),(1,16,'掌握',1.5),(1,27,'熟练',2.0),(1,28,'熟练',2.0),
@@ -924,8 +924,6 @@ INSERT INTO `faq` (`category`, `question`, `answer`, `keywords`, `sort_order`) V
 ('PLATFORM','平台什么时候上新功能？','平台会持续迭代更新，具体更新计划请关注平台公告。如有功能建议，欢迎向管理员反馈。','更新,新功能,计划',41);
 
 -- ============================================================
--- 数据库迁移：为已有 resume_file 表添加文档分类字段
+-- 数据库迁移：resume_file 表已在 DDL 中包含 document_type/classify_source
 -- ============================================================
--- 如果列已存在则忽略，兼容新老数据库
-ALTER TABLE `resume_file` ADD COLUMN IF NOT EXISTS `document_type` VARCHAR(20) DEFAULT NULL COMMENT '文档分类(RESUME/PROJECT/OTHER)';
-ALTER TABLE `resume_file` ADD COLUMN IF NOT EXISTS `classify_source` VARCHAR(20) DEFAULT NULL COMMENT '分类来源(AI/KEYWORD/UNKNOWN)';
+
